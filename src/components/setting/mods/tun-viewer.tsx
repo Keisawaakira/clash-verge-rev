@@ -54,6 +54,7 @@ export function TunViewer({ ref }: { ref?: Ref<DialogRef> }) {
     strictRoute: false,
     mtu: 1500,
     dnsMode: '',
+    DisableICMPForwarding: true,
   })
 
   const routeExcludeAddressItems = splitRouteExcludeAddress(
@@ -87,6 +88,7 @@ export function TunViewer({ ref }: { ref?: Ref<DialogRef> }) {
         strictRoute: clash?.tun['strict-route'] ?? false,
         mtu: clash?.tun.mtu ?? 1500,
         dnsMode: clash?.tun['dns-mode'] ?? '',
+        DisableICMPForwarding: clash?.tun['disable-icmp-forwarding'] ?? true,
       })
     },
     close: () => setOpen(false),
@@ -123,6 +125,7 @@ export function TunViewer({ ref }: { ref?: Ref<DialogRef> }) {
         'dns-mode': values.dnsMode,
         'strict-route': values.strictRoute,
         mtu: values.mtu ?? 1500,
+        'disable-icmp-forwarding': values.DisableICMPForwarding,
       }
       await patchClash({ tun })
       await mutateClash(
@@ -170,6 +173,7 @@ export function TunViewer({ ref }: { ref?: Ref<DialogRef> }) {
                 'dns-mode': '',
                 'strict-route': false,
                 mtu: 1500,
+                'disable-icmp-forwarding': true,
               }
               setValues({
                 stack: 'mips',
@@ -182,6 +186,7 @@ export function TunViewer({ ref }: { ref?: Ref<DialogRef> }) {
                 strictRoute: false,
                 mtu: 1500,
                 dnsMode: '',
+                DisableICMPForwarding: true,
               })
               await patchClash({ tun })
               await mutateClash(
