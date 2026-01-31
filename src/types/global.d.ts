@@ -46,6 +46,7 @@ interface IConfigData {
     'route-exclude-address'?: string[]
     'strict-route': boolean
     mtu: number
+    'disable-icmp-forwarding': boolean
   }
   dns?: {
     enable?: boolean
