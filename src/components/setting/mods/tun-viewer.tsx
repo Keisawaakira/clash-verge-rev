@@ -51,6 +51,7 @@ export function TunViewer({ ref }: { ref?: Ref<DialogRef> }) {
     dnsHijack: ['any:53'],
     strictRoute: false,
     mtu: 1500,
+    DisableICMPForwarding: true,
   })
 
   const routeExcludeAddressItems = splitRouteExcludeAddress(
@@ -83,6 +84,7 @@ export function TunViewer({ ref }: { ref?: Ref<DialogRef> }) {
         dnsHijack: clash?.tun['dns-hijack'] ?? ['any:53'],
         strictRoute: clash?.tun['strict-route'] ?? false,
         mtu: clash?.tun.mtu ?? 1500,
+        DisableICMPForwarding: clash?.tun['disable-icmp-forwarding'] ?? true,
       })
     },
     close: () => setOpen(false),
@@ -118,6 +120,7 @@ export function TunViewer({ ref }: { ref?: Ref<DialogRef> }) {
         'dns-hijack': values.dnsHijack[0] === '' ? [] : values.dnsHijack,
         'strict-route': values.strictRoute,
         mtu: values.mtu ?? 1500,
+        'disable-icmp-forwarding': values.DisableICMPForwarding,
       }
       await patchClash({ tun })
       await mutateClash(
@@ -161,6 +164,7 @@ export function TunViewer({ ref }: { ref?: Ref<DialogRef> }) {
                 'route-exclude-address': [],
                 'strict-route': false,
                 mtu: 1500,
+                'disable-icmp-forwarding': true
               }
               setValues({
                 stack: 'gvisor',
@@ -172,6 +176,7 @@ export function TunViewer({ ref }: { ref?: Ref<DialogRef> }) {
                 dnsHijack: ['any:53'],
                 strictRoute: false,
                 mtu: 1500,
+                DisableICMPForwarding: true
               })
               await patchClash({ tun })
               await mutateClash(
