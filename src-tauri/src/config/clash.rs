@@ -60,6 +60,7 @@ impl IClashTemp {
         tun_config.insert("strict-route".into(), false.into());
         tun_config.insert("auto-detect-interface".into(), true.into());
         tun_config.insert("dns-hijack".into(), tun_const::DNS_HIJACK.into());
+        tun_config.insert("disable-icmp-forwarding".into(), true.into());
 
         #[cfg(not(target_os = "windows"))]
         map.insert("redir-port".into(), network::ports::DEFAULT_REDIR.into());
