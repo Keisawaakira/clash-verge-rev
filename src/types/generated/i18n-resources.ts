@@ -1195,6 +1195,7 @@ export interface TranslationResources {
             routeExcludeAddress: string
             stack: string
             strictRoute: string
+            DisableICMPForwarding: string
           }
           messages: {
             applied: string
