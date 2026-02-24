@@ -59,7 +59,9 @@ async fn resolve_setup() {
     #[cfg(target_os = "macos")]
     resolve_dock_show().await;
     init_startup_script().await;
-    init_service_manager().await;
+    if let Err(err) = tokio::time::timeout(std::time::Duration::from_secs(3), init_service_manager()).await {
+        logging!(warn, Type::Setup, "init_service_manager timed out: {}", err);
+    }
     let config_initialized = init_verge_config_before_window().await;
     init_window().await;
     feat::reconcile_startup_tun_availability().await;
