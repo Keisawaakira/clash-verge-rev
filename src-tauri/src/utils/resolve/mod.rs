@@ -58,7 +58,9 @@ pub fn resolve_setup_async() {
         init_window().await;
 
         let core_init = AsyncHandler::spawn(|| async {
-            init_service_manager().await;
+            if let Err(err) = tokio::time::timeout(std::time::Duration::from_secs(3), init_service_manager()).await {
+                logging!(warn, Type::Setup, "init_service_manager timed out: {}", err);
+            }
             init_core_manager().await;
             init_system_proxy().await;
             init_system_proxy_guard().await;
