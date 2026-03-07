@@ -200,7 +200,7 @@ pub async fn update_profile(
         Some((url, opt)) => {
             perform_profile_update(uid, &url, opt.as_ref(), option, is_mannual_trigger).await? && auto_refresh
         }
-        None => auto_refresh,
+        None => false,
     };
 
     if should_refresh {
