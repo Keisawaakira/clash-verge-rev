@@ -479,6 +479,83 @@ fn apply_builtin_scripts(mut config: Mapping, clash_core: Option<String>, enable
     config
 }
 
+fn append_unique_string(seq: &mut serde_yaml_ng::Sequence, value: &str) {
+    if !seq.iter().any(|item| item.as_str() == Some(value)) {
+        seq.push(Value::String(value.into()));
+    }
+}
+
+fn extract_tun_bypass_rules(mut config: Mapping) -> Mapping {
+    const PROCESS_RULE: &str = "TUN-BYPASS-PROCESS";
+    const PROCESS_PATH_RULE: &str = "TUN-BYPASS-PROCESS-PATH";
+
+    let mut exclude_process = serde_yaml_ng::Sequence::new();
+    let mut exclude_process_path = serde_yaml_ng::Sequence::new();
+
+    if let Some(Value::Sequence(rules)) = config.get_mut("rules") {
+        let mut retained = serde_yaml_ng::Sequence::new();
+        for rule in std::mem::take(rules) {
+            let Some(rule_str) = rule.as_str() else {
+                retained.push(rule);
+                continue;
+            };
+
+            let mut parts = rule_str.splitn(3, ',').map(str::trim);
+            let Some(kind) = parts.next() else {
+                retained.push(Value::String(rule_str.into()));
+                continue;
+            };
+            let payload = parts.next().unwrap_or_default();
+
+            if kind.eq_ignore_ascii_case(PROCESS_RULE) && !payload.is_empty() {
+                append_unique_string(&mut exclude_process, payload);
+                continue;
+            }
+
+            if kind.eq_ignore_ascii_case(PROCESS_PATH_RULE) && !payload.is_empty() {
+                append_unique_string(&mut exclude_process_path, payload);
+                continue;
+            }
+
+            retained.push(Value::String(rule_str.into()));
+        }
+        *rules = retained;
+    }
+
+    if exclude_process.is_empty() && exclude_process_path.is_empty() {
+        return config;
+    }
+
+    let mut tun = config.get("tun").and_then(Value::as_mapping).cloned().unwrap_or_default();
+
+    if !exclude_process.is_empty() {
+        let mut seq = tun
+            .get("exclude-process")
+            .and_then(Value::as_sequence)
+            .cloned()
+            .unwrap_or_default();
+        for value in exclude_process.iter().filter_map(Value::as_str) {
+            append_unique_string(&mut seq, value);
+        }
+        tun.insert("exclude-process".into(), Value::Sequence(seq));
+    }
+
+    if !exclude_process_path.is_empty() {
+        let mut seq = tun
+            .get("exclude-process-path")
+            .and_then(Value::as_sequence)
+            .cloned()
+            .unwrap_or_default();
+        for value in exclude_process_path.iter().filter_map(Value::as_str) {
+            append_unique_string(&mut seq, value);
+        }
+        tun.insert("exclude-process-path".into(), Value::Sequence(seq));
+    }
+
+    config.insert("tun".into(), Value::Mapping(tun));
+    config
+}
+
 fn cleanup_proxy_groups(mut config: Mapping) -> Mapping {
     const BUILTIN_POLICIES: &[&str] = &["DIRECT", "REJECT", "REJECT-DROP", "PASS"];
 
@@ -653,7 +730,7 @@ pub async fn enhance() -> (Mapping, HashSet<String>, HashMap<String, ResultLog>)
     let mut config = apply_builtin_scripts(config, clash_core, enable_builtin);
 
     config = cleanup_proxy_groups(config);
-
+    config = extract_tun_bypass_rules(config);
     config = use_tun(config, enable_tun);
     config = use_sort(config);
 
@@ -669,7 +746,7 @@ pub async fn enhance() -> (Mapping, HashSet<String>, HashMap<String, ResultLog>)
 #[allow(clippy::expect_used)]
 #[cfg(test)]
 mod tests {
-    use super::cleanup_proxy_groups;
+    use super::{cleanup_proxy_groups, extract_tun_bypass_rules};
 
     #[test]
     fn remove_missing_proxies_from_groups() {

@@ -152,7 +152,7 @@ impl Hotkey {
                 });
             }
             HotkeyFunction::ReactivateProfiles => {
-                AsyncHandler::spawn(async move || match feat::enhance_profiles().await {
+                AsyncHandler::spawn(async move || match feat::enhance_profiles_with_source("core.hotkey.reactivate_profiles").await {
                     Ok((true, _)) => {
                         handle::Handle::refresh_clash();
                         notify_event(NotificationEvent::ProfilesReactivated).await;

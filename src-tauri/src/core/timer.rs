@@ -430,7 +430,7 @@ impl Timer {
             let is_current = Config::profiles().await.latest_arc().current.as_ref() == Some(uid);
             logging!(info, Type::Timer, "配置 {} 是否为当前激活配置: {}", uid, is_current);
 
-            feat::update_profile(uid, None, is_current, false, false).await
+            feat::update_profile_with_source(uid, None, is_current, false, false, "core.timer.async_task").await
         })
         .await
         {

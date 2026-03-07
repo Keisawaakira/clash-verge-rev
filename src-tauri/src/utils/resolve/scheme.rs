@@ -138,7 +138,9 @@ async fn refresh_core_config() {
         Type::Config,
         "Deep link import set current profile; refreshing core config"
     );
-    match CoreManager::global().update_config().await {
+    match CoreManager::global()
+        .update_config_with_source("utils.resolve.scheme.refresh_core_config")
+        .await {
         Ok((true, _)) => handle::Handle::refresh_clash(),
         Ok((false, msg)) => {
             let message = if msg.is_empty() {

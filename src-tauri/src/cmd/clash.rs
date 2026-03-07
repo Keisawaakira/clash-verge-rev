@@ -175,7 +175,10 @@ pub async fn apply_dns_config(apply: bool) -> CmdResult {
         })?;
 
         // 应用新配置
-        CoreManager::global().update_config().await.stringify_err_log(|err| {
+        CoreManager::global()
+            .update_config_with_source("cmd.clash.apply_dns_config.enable")
+            .await
+            .stringify_err_log(|err| {
             let err = format!("Failed to apply config with DNS: {err}");
             logging!(error, Type::Config, "{err}");
         })?;
@@ -190,7 +193,10 @@ pub async fn apply_dns_config(apply: bool) -> CmdResult {
             logging!(error, Type::Config, "{err}");
         })?;
 
-        CoreManager::global().update_config().await.stringify_err_log(|err| {
+        CoreManager::global()
+            .update_config_with_source("cmd.clash.apply_dns_config.disable")
+            .await
+            .stringify_err_log(|err| {
             let err = format!("Failed to apply regenerated config: {err}");
             logging!(error, Type::Config, "{err}");
         })?;

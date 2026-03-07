@@ -1,4 +1,4 @@
-use crate::{
+﻿use crate::{
     config::{Config, IVerge},
     core::{CoreManager, autostart, handle, hotkey, logger::Logger, sysopt, tray},
     module::{auto_backup::AutoBackupManager, lightweight},
@@ -29,7 +29,9 @@ pub async fn patch_clash(patch: &Mapping) -> Result<()> {
                 );
             }
             Config::runtime().await.edit_draft(|d| d.patch_config(patch));
-            CoreManager::global().update_config().await?;
+            CoreManager::global()
+                .update_config_with_source("feat.config.patch_clash")
+                .await?;
         }
         handle::Handle::refresh_clash();
         <Result<()>>::Ok(())
@@ -48,6 +50,7 @@ pub async fn patch_clash(patch: &Mapping) -> Result<()> {
         }
     }
 }
+
 
 // Define update flags as bitflags for better performance
 bitflags! {
@@ -208,7 +211,9 @@ async fn process_terminated_flags(update_flags: UpdateFlags, patch: &IVerge) -> 
         CoreManager::global().restart_core().await?;
     }
     if update_flags.contains(UpdateFlags::CLASH_CONFIG) {
-        CoreManager::global().update_config().await?;
+        CoreManager::global()
+            .update_config_with_source("feat.config.process_terminated_flags.clash_config")
+            .await?;
         handle::Handle::refresh_clash();
     }
     if update_flags.contains(UpdateFlags::VERGE_CONFIG) {

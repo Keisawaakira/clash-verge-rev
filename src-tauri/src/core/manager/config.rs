@@ -1,4 +1,4 @@
-use super::CoreManager;
+﻿use super::CoreManager;
 use crate::{
     config::{Config, ConfigType, runtime::IRuntime},
     constants::timing,
@@ -32,6 +32,10 @@ impl CoreManager {
     }
 
     pub async fn update_config(&self) -> Result<(bool, String)> {
+        self.update_config_with_source("unknown").await
+    }
+
+    pub async fn update_config_with_source(&self, source: &str) -> Result<(bool, String)> {
         if handle::Handle::global().is_exiting() {
             return Ok((true, String::new()));
         }
@@ -40,6 +44,7 @@ impl CoreManager {
             return Ok((true, String::new()));
         }
 
+        let _ = source;
         self.perform_config_update().await
     }
 

@@ -193,25 +193,33 @@ pub async fn update_profile(
     ignore_auto_update: bool,
     is_mannual_trigger: bool,
 ) -> Result<()> {
-    logging!(info, Type::Config, "[订阅更新] 开始更新订阅 {}", uid);
+    update_profile_with_source(uid, option, auto_refresh, ignore_auto_update, is_mannual_trigger, "unknown").await
+}
+
+pub async fn update_profile_with_source(
+    uid: &String,
+    option: Option<&PrfOption>,
+    auto_refresh: bool,
+    ignore_auto_update: bool,
+    is_mannual_trigger: bool,
+    source: &str,
+) -> Result<()> {
     let url_opt = should_update_profile(uid, ignore_auto_update).await?;
 
     let should_refresh = match url_opt {
         Some((url, opt)) => {
             perform_profile_update(uid, &url, opt.as_ref(), option, is_mannual_trigger).await? && auto_refresh
         }
-        None => auto_refresh,
+        None => false,
     };
 
     if should_refresh {
-        logging!(info, Type::Config, "[订阅更新] 更新内核配置");
-        match CoreManager::global().update_config().await {
+        let reload_source = format!("feat.profile.update_profile:{}", source);
+        match CoreManager::global().update_config_with_source(&reload_source).await {
             Ok(_) => {
-                logging!(info, Type::Config, "[订阅更新] 更新成功");
                 handle::Handle::refresh_clash();
             }
             Err(err) => {
-                logging!(error, Type::Config, "[订阅更新] 更新失败: {}", err);
                 handle::Handle::notice_message("update_failed", format!("{err}"));
                 logging!(error, Type::Config, "{err}");
             }
@@ -223,5 +231,12 @@ pub async fn update_profile(
 
 /// 增强配置
 pub async fn enhance_profiles() -> Result<(bool, String)> {
-    crate::core::CoreManager::global().update_config().await
+    enhance_profiles_with_source("unknown").await
+}
+
+pub async fn enhance_profiles_with_source(source: &str) -> Result<(bool, String)> {
+    let reload_source = format!("feat.profile.enhance_profiles:{}", source);
+    crate::core::CoreManager::global()
+        .update_config_with_source(&reload_source)
+        .await
 }

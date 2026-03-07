@@ -92,7 +92,10 @@ async fn handle_merge_file(
     match CoreConfigValidator::validate_config_file(file_path_str, Some(true)).await {
         Ok((true, _)) => {
             logging!(info, Type::Config, "[cmd配置save] merge文件语法验证通过");
-            if let Err(e) = CoreManager::global().update_config().await {
+            if let Err(e) = CoreManager::global()
+                .update_config_with_source("cmd.save_profile.handle_merge_file")
+                .await
+            {
                 logging!(warn, Type::Config, "[cmd配置save] 更新整体配置时发生错误: {}", e);
             } else {
                 handle::Handle::refresh_clash();

@@ -35,7 +35,7 @@ pub async fn get_profiles() -> CmdResult<SharedDraft<IProfiles>> {
 /// 增强配置文件
 #[tauri::command]
 pub async fn enhance_profiles() -> CmdResult {
-    match feat::enhance_profiles().await {
+    match feat::enhance_profiles_with_source("cmd.profile.enhance_profiles").await {
         Ok((true, _)) => {
             handle::Handle::refresh_clash();
             Ok(())
@@ -154,7 +154,7 @@ pub async fn create_profile(item: PrfItem, file_data: Option<String>) -> CmdResu
 /// 更新配置文件
 #[tauri::command]
 pub async fn update_profile(index: String, option: Option<PrfOption>) -> CmdResult {
-    match feat::update_profile(&index, option.as_ref(), true, true, true).await {
+    match feat::update_profile_with_source(&index, option.as_ref(), true, true, true, "cmd.profile.update_profile").await {
         Ok(_) => {
             let _: () = Config::profiles().await.apply();
             Ok(())
@@ -182,7 +182,10 @@ pub async fn delete_profile(index: String) -> CmdResult {
     }
     if should_update {
         Config::profiles().await.apply();
-        match CoreManager::global().update_config().await {
+        match CoreManager::global()
+            .update_config_with_source("cmd.profile.delete_profile")
+            .await
+        {
             Ok(_) => {
                 handle::Handle::refresh_clash();
                 // 发送配置变更通知
