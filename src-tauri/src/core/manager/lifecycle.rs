@@ -391,6 +391,7 @@ impl CoreManager {
         // Settling on Sidecar is what makes the verdict final, so ask only once it is recorded.
         // Elevation alone carries TUN on Sidecar; a Sidecar that cannot must write it off.
         let prepared = async {
+            Config::prefer_sidecar_and_persist().await?;
             let tun_enabled = Config::verge().await.latest_arc().enable_tun_mode.unwrap_or(false);
             if crate::core::runstate::RUN_STATE
                 .state()
@@ -453,7 +454,7 @@ impl CoreManager {
                     .await
             },
             || async {
-                // Must be asked after the uninstall: until then the Service still makes TUN capable.
+                Config::prefer_sidecar_and_persist().await?;
                 let tun_enabled = Config::verge().await.latest_arc().enable_tun_mode.unwrap_or(false);
                 if crate::core::runstate::RUN_STATE
                     .state()
@@ -770,6 +771,10 @@ impl CoreManager {
     }
 
     async fn prepare_startup(&self) -> StartupDecision {
+        if !Config::verge().await.latest_arc().enable_service_mode.unwrap_or(false) {
+            return StartupDecision::Sidecar;
+        }
+
         #[cfg(target_os = "windows")]
         self.wait_for_service_if_needed().await;
 
@@ -821,8 +826,10 @@ impl CoreManager {
         use std::time::Instant;
 
         // An accepted Sidecar is the user's decision for this session, not a wait for the Service.
+        let state = crate::core::runstate::RUN_STATE.state();
         let needs_service = Config::verge().await.latest_arc().enable_tun_mode.unwrap_or(false)
-            && !crate::core::runstate::RUN_STATE.state().sidecar_allowed;
+            && !state.prefer_sidecar
+            && !state.sidecar_allowed;
         if !needs_service {
             return;
         }
@@ -879,7 +886,8 @@ impl CoreManager {
     #[tracing::instrument(skip_all, level = "debug", fields(outcome = tracing::field::Empty))]
     async fn try_handoff_sidecar_to_service(&self) -> HandoffOutcome {
         // Before probing: a probe reply records an observation, which clears sidecar_allowed.
-        if crate::core::runstate::RUN_STATE.state().sidecar_allowed {
+        let state = crate::core::runstate::RUN_STATE.state();
+        if state.prefer_sidecar || state.sidecar_allowed {
             return HandoffOutcome::Done;
         }
         if !Self::refresh_service_readiness_for_handoff().await {
@@ -898,6 +906,7 @@ impl CoreManager {
 
         if !matches!(*self.get_running_mode(), RunningMode::Sidecar)
             || !Config::verge().await.latest_arc().enable_tun_mode.unwrap_or(false)
+            || !Config::verge().await.latest_arc().enable_service_mode.unwrap_or(false)
             || crate::core::runstate::RUN_STATE.state().sidecar_allowed
         {
             return HandoffOutcome::Done;
