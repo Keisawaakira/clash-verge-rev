@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 
-import { installService, restartCore } from '@/services/cmds'
+import { installService, patchVergeConfig } from '@/services/cmds'
 import { mutate } from '@/services/mutate'
 import { showNotice } from '@/services/notice-service'
 
@@ -47,8 +47,9 @@ export const useServiceInstaller = () => {
 
     await executeWithErrorHandling(
       () =>
-        mutate(() => restartCore(), {
-          id: 'restart-core',
+        mutate(() => patchVergeConfig({ enable_service_mode: true }), {
+          id: 'patch-verge-config',
+          revalidate: [['getVergeConfig']],
           errorNotice: false,
         }),
       'settings.statuses.clash.restarting',

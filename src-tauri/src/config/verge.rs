@@ -79,6 +79,9 @@ pub struct IVerge {
 
     pub enable_tun_mode: Option<bool>,
 
+    /// Missing preferences use Sidecar, including configurations from older versions.
+    pub enable_service_mode: Option<bool>,
+
     pub enable_auto_launch: Option<bool>,
 
     pub enable_silent_start: Option<bool>,
@@ -377,6 +380,7 @@ impl IVerge {
             common_tray_icon: Some(false),
             sysproxy_tray_icon: Some(false),
             tun_tray_icon: Some(false),
+            enable_service_mode: Some(false),
             enable_auto_launch: Some(false),
             enable_silent_start: Some(false),
             enable_hover_jump_navigator: Some(true),
@@ -458,6 +462,7 @@ impl IVerge {
         patch_opt_field!(self, patch, tun_tray_icon);
 
         patch_opt_field!(self, patch, enable_tun_mode);
+        patch_opt_field!(self, patch, enable_service_mode);
         patch_opt_field!(self, patch, enable_auto_launch);
         patch_opt_field!(self, patch, enable_silent_start);
         patch_opt_field!(self, patch, enable_hover_jump_navigator);

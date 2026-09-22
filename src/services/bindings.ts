@@ -396,6 +396,8 @@ export type IVerge_Deserialize = {
   sysproxy_tray_icon?: boolean | null
   tun_tray_icon?: boolean | null
   enable_tun_mode?: boolean | null
+  /**  Missing preferences use Sidecar, including configurations from older versions. */
+  enable_service_mode?: boolean | null
   enable_auto_launch?: boolean | null
   enable_silent_start?: boolean | null
   enable_system_proxy?: boolean | null
@@ -486,6 +488,8 @@ export type IVerge_Serialize = {
   sysproxy_tray_icon: boolean | null
   tun_tray_icon: boolean | null
   enable_tun_mode: boolean | null
+  /**  Missing preferences use Sidecar, including configurations from older versions. */
+  enable_service_mode: boolean | null
   enable_auto_launch: boolean | null
   enable_silent_start: boolean | null
   enable_system_proxy: boolean | null
