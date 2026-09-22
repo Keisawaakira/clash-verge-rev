@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { BaseDialog } from '@/components/base'
+import { useVerge } from '@/hooks/use-verge'
 import {
   continueWithSidecar,
   installService,
@@ -17,6 +18,7 @@ import { useAppReads, useRunState } from '@/store/app-store-context'
 
 export const ServiceMigrationDialog = () => {
   const { t } = useTranslation()
+  const { verge } = useVerge()
   const [loading, setLoading] = useState(false)
   const [stateRefreshFailed, setStateRefreshFailed] = useState(false)
   const [workflowIncomplete, setWorkflowIncomplete] = useState(false)
@@ -35,7 +37,9 @@ export const ServiceMigrationDialog = () => {
         : runState?.service === 'notInstalled'
           ? 'install'
           : 'reinstall'
-  const open = loading || workflowIncomplete || needsDecision
+  const open =
+    loading ||
+    Boolean(verge?.enable_service_mode && (workflowIncomplete || needsDecision))
   const checking =
     loading ||
     !runState ||

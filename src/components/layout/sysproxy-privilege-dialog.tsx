@@ -8,7 +8,6 @@ import {
   installService,
   patchVergeConfig,
   reinstallService,
-  restartCore,
   type FailedOperation,
   type PendingFailure,
   type ServiceInstallOutcome,
@@ -131,8 +130,9 @@ export const SysproxyPrivilegeDialog = () => {
         return
       }
       setStep('restarting')
-      await mutate(() => restartCore(), {
-        id: 'restart-core',
+      await mutate(() => patchVergeConfig({ enable_service_mode: true }), {
+        id: 'patch-verge-config',
+        revalidate: [['getVergeConfig']],
         errorNotice: false,
       })
 

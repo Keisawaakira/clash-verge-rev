@@ -131,6 +131,12 @@ pub(super) async fn apply(config_write: &MutexGuard<'_, ()>, patch: Patch<'_>, e
     }
     let result: Result<()> = async {
         for effect in effects.iter().copied() {
+            // Mode changes must survive a failed restart; defer Core and proxy effects until commit.
+            if verge_patch.enable_service_mode.is_some()
+                && matches!(effect, Effect::RestartCore | Effect::ClashConfig | Effect::SystemProxy)
+            {
+                continue;
+            }
             let result = Box::pin(ensure_effect(effect, verge_patch, manager, &update)).await;
             if matches!(patch, Patch::Clash(_)) && matches!(effect, Effect::TrayMenu | Effect::TrayIcon) {
                 // Tray failures must not reject an applied Clash mode change.
@@ -163,6 +169,14 @@ pub(super) async fn apply(config_write: &MutexGuard<'_, ()>, patch: Patch<'_>, e
     transaction.commit();
     match patch {
         Patch::Verge { patch, .. } => {
+            if let Some(enable_service_mode) = patch.enable_service_mode {
+                let state = &crate::core::runstate::RUN_STATE;
+                state.set_prefer_sidecar(!enable_service_mode);
+                if enable_service_mode {
+                    state.withdraw_sidecar_allowance();
+                }
+                tray::Tray::global().update_menu_and_icon().await;
+            }
             if patch.auto_check_update == Some(false) {
                 SilentUpdater::global().discard_pending();
             }
@@ -173,6 +187,25 @@ pub(super) async fn apply(config_write: &MutexGuard<'_, ()>, patch: Patch<'_>, e
             announce(Refresh::Verge);
         }
         Patch::Clash(_) => announce(Refresh::Clash),
+    }
+    if verge_patch.enable_service_mode.is_some() {
+        // Only an unapplied runtime may roll back now; the mode preference is already committed.
+        let runtime_transaction = DraftTransaction::begin(vec![&runtime])?;
+        let result = Box::pin(ensure_effect(Effect::RestartCore, verge_patch, manager, &update)).await;
+        if let Err(error) = result {
+            runtime_transaction.rollback();
+            announce(Refresh::Clash);
+            if Arc::ptr_eq(&original_runtime, &runtime.data_arc()) {
+                let runtime_path = crate::utils::dirs::app_home_dir()?.join(crate::constants::files::RUNTIME_CONFIG);
+                snapshots.retain(|snapshot| snapshot.path == runtime_path);
+                if let Err(rollback_error) = restore_files(&snapshots).await {
+                    return Err(proxy_control::rollback_failure(error, rollback_error));
+                }
+            }
+            return Err(error);
+        }
+        runtime_transaction.commit();
+        announce(Refresh::Clash);
     }
     Ok(())
 }

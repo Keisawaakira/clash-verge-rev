@@ -14,12 +14,18 @@ pub async fn patch_clash(patch: &Mapping) -> Result<()> {
     .await
 }
 
-/// Apply a patch, then reconcile TUN when its setting changes.
+/// Apply a patch, then reconcile TUN when its setting or mode preference changes.
 ///
 /// TUN patches do not always produce a Run State transition, so reconciliation is explicit.
 pub async fn patch_verge(patch: &IVerge, not_save_file: bool) -> Result<()> {
-    apply_verge_patch(patch, not_save_file).await?;
-    if patch.enable_tun_mode.is_some() {
+    if patch.enable_service_mode == Some(false) && !crate::core::runstate::RUN_STATE.state().is_admin {
+        let mut patch = patch.clone();
+        patch.enable_tun_mode = Some(false);
+        apply_verge_patch(&patch, not_save_file).await?;
+    } else {
+        apply_verge_patch(patch, not_save_file).await?;
+    }
+    if patch.enable_tun_mode.is_some() || patch.enable_service_mode.is_some() {
         super::reconcile_tun_availability().await;
     }
     Ok(())
