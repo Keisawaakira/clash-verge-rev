@@ -9,7 +9,6 @@ import {
   installService,
   patchVergeConfig,
   reinstallService,
-  restartCore,
   type FailedOperation,
   type PendingFailure,
   type ServiceInstallOutcome,
@@ -118,7 +117,7 @@ export const SysproxyPrivilegeDialog = () => {
         return
       }
       setStep('restarting')
-      await restartCore()
+      await patchVergeConfig({ enable_service_mode: true })
 
       const runState = await getRuntimeState()
       const usingAdminFallback =

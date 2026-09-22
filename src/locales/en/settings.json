@@ -100,6 +100,7 @@
       "title": "Clash Setting",
       "form": {
         "fields": {
+          "preferService": "Prefer Service Mode",
           "allowLan": "Allow LAN",
           "dnsOverwrite": "DNS Overwrite",
           "ipv6": "IPv6",
@@ -137,6 +138,7 @@
           }
         },
         "tooltips": {
+          "preferService": "Off by default: use Sidecar without Service repair prompts. Your choice is saved and the core restarts when changed. Sidecar requires administrator privileges for TUN.",
           "networkInterface": "Network Interface",
           "unifiedDelay": "When unified delay is turned on, two delay tests will be performed to eliminate the delay differences between different types of nodes caused by connection handshakes, etc",
           "logLevel": "This parameter is valid only for kernel log files in the log directory Service folder",

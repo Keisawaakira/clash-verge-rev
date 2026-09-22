@@ -101,13 +101,6 @@ impl SilentUpdater {
     }
 }
 
-pub fn is_build_to_stable(current: &str, remote: &str) -> bool {
-    let Some((base, build)) = current.trim_start_matches('v').split_once('+') else {
-        return false;
-    };
-    !build.is_empty() && !base.contains('-') && base == remote.trim_start_matches('v')
-}
-
 /// Compares numeric version components after stripping version suffixes.
 fn version_lte(a: &str, b: &str) -> bool {
     let parse = |v: &str| -> Vec<u64> {
@@ -159,7 +152,7 @@ impl SilentUpdater {
 
         let cached_version = &meta.version;
 
-        if !is_build_to_stable(current_version, cached_version) && version_lte(cached_version, current_version) {
+        if version_lte(cached_version, current_version) {
             logging!(
                 info,
                 Type::System,
