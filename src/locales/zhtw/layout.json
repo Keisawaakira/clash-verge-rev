@@ -22,12 +22,12 @@
     },
     "serviceMigration": {
       "title": "需要更新系統服務",
-      "message": "Clash Verge 系統服務版本與目前應用程式要求不符。請選擇「重新安裝服務」移除現有服務並安裝所需版本，也可以僅在本次工作階段繼續使用 Sidecar。",
+      "message": "Clash Verge 系統服務版本與目前應用程式要求不符。請選擇「重新安裝服務」移除現有服務並安裝所需版本，也可以切換為 Sidecar 並記住選擇。",
       "checkingMessage": "正在確認系統服務狀態及目前執行模式，請稍候……",
-      "unavailableMessage": "所需的 Clash Verge 系統服務目前不可用。你可以安裝或修復服務，或僅在本次工作階段繼續使用 Sidecar。",
+      "unavailableMessage": "所需的 Clash Verge 系統服務目前不可用。你可以安裝或修復服務，或切換為 Sidecar 並記住選擇。",
       "reinstall": "重新安裝服務",
       "repair": "修復服務",
-      "continueSidecar": "繼續使用 Sidecar",
+      "continueSidecar": "使用 Sidecar 並記住選擇",
       "success": "Clash Verge 系統服務已更新",
       "errors": {
         "actionFailed": "服務操作失敗",

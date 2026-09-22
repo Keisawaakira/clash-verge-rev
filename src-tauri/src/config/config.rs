@@ -77,6 +77,18 @@ impl Config {
         Ok(())
     }
 
+    pub(crate) async fn prefer_sidecar_and_persist() -> Result<()> {
+        let verge = Self::verge().await;
+        verge.edit_draft(|draft| {
+            draft.enable_service_mode = Some(false);
+        });
+        verge.apply();
+        crate::core::runstate::RUN_STATE.set_prefer_sidecar(true);
+        verge.data_arc().save_file().await?;
+        Handle::refresh_verge();
+        Ok(())
+    }
+
     pub(crate) async fn disable_tun_and_persist() -> Result<()> {
         let verge = Self::verge().await;
         verge.edit_draft(|draft| {

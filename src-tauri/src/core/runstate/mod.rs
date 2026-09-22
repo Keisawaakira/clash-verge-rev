@@ -81,6 +81,7 @@ pub struct RunStateStore<E: RunStateEnv> {
     service: Mutex<VersionedService>,
     mode: ArcSwap<RunningMode>,
     operation_running: AtomicBool,
+    prefer_sidecar: AtomicBool,
     operation_done: Notify,
 }
 
@@ -91,7 +92,14 @@ impl<E: RunStateEnv> RunStateStore<E> {
             service: Mutex::new(VersionedService::default()),
             mode: ArcSwap::new(Arc::new(RunningMode::NotRunning)),
             operation_running: AtomicBool::new(false),
+            prefer_sidecar: AtomicBool::new(false),
             operation_done: Notify::new(),
+        }
+    }
+
+    pub fn set_prefer_sidecar(&self, prefer_sidecar: bool) {
+        if self.prefer_sidecar.swap(prefer_sidecar, Ordering::AcqRel) != prefer_sidecar {
+            self.announce();
         }
     }
 
@@ -454,6 +462,7 @@ impl<E: RunStateEnv> RunStateStore<E> {
             health: service.health,
             pending: service.pending,
             sidecar_allowed: service.sidecar_allowed,
+            prefer_sidecar: self.prefer_sidecar.load(Ordering::Acquire),
             mode: *self.mode.load().as_ref(),
             is_admin: self.env.is_elevated(),
             op_in_flight: self.operation_running.load(Ordering::Acquire),

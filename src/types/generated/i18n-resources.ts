@@ -1242,6 +1242,7 @@ export interface TranslationResources {
               logLevel: string
               openUwpTool: string
               portConfig: string
+              preferService: string
               tunnels: {
                 actions: {
                   add: string
@@ -1283,6 +1284,7 @@ export interface TranslationResources {
               logLevel: string
               networkInterface: string
               openUwpTool: string
+              preferService: string
               unifiedDelay: string
             }
           }

@@ -8,7 +8,6 @@ import {
   getRuntimeState,
   installService,
   patchVergeConfig,
-  restartCore,
   type FailedOperation,
   type PendingFailure,
 } from '@/services/cmds'
@@ -97,7 +96,7 @@ export const SysproxyPrivilegeDialog = () => {
         await installService()
       }
       setStep('restarting')
-      await restartCore()
+      await patchVergeConfig({ enable_service_mode: true })
 
       const runState = await getRuntimeState()
       const usingAdminFallback =

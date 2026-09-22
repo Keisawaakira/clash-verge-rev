@@ -1,4 +1,4 @@
-//! Run State separates observed Service health from session intent.
+//! Run State separates observed Service health from mode preferences and session intent.
 //! Core lifecycle remains in `CoreManager`.
 
 use crate::core::manager::RunningMode;
@@ -46,6 +46,7 @@ pub struct RunState {
     pub health: ServiceHealth,
     pub pending: Option<PendingAction>,
     pub sidecar_allowed: bool,
+    pub prefer_sidecar: bool,
     pub mode: RunningMode,
     pub is_admin: bool,
     /// A privileged operation is currently in flight, so `health` may be stale.
@@ -65,13 +66,13 @@ impl RunState {
 
     #[must_use]
     pub const fn tun_capable(&self) -> bool {
-        self.is_admin || self.service_usable()
+        self.is_admin || (!self.prefer_sidecar && !self.sidecar_allowed && self.service_usable())
     }
 
     /// In-flight, absent, and accepted-Sidecar states require no user decision.
     #[must_use]
     pub const fn service_needs_attention(&self) -> bool {
-        if self.op_in_flight {
+        if self.prefer_sidecar || self.op_in_flight {
             return false;
         }
         if self.pending.is_some() {
@@ -86,19 +87,21 @@ impl RunState {
         )
     }
 
-    /// Unknown, in-flight, and attention-required states are inconclusive.
+    /// Service uncertainty delays TUN reconciliation only when Service is preferred.
     #[must_use]
     pub const fn tun_should_be_disabled(&self, tun_enabled: bool) -> bool {
         if !tun_enabled || self.tun_capable() {
             return false;
         }
-        !matches!(self.health, ServiceHealth::Unknown) && !self.op_in_flight && !self.service_needs_attention()
+        self.prefer_sidecar
+            || (!matches!(self.health, ServiceHealth::Unknown) && !self.op_in_flight && !self.service_needs_attention())
     }
 
-    /// Present-but-broken services remain in the repair flow rather than being disabled here.
+    /// A preferred but broken Service remains in the repair flow.
     #[must_use]
     pub const fn startup_tun_should_be_disabled(&self, tun_enabled: bool) -> bool {
-        matches!(self.health, ServiceHealth::NotInstalled) && self.tun_should_be_disabled(tun_enabled)
+        (self.prefer_sidecar || matches!(self.health, ServiceHealth::NotInstalled))
+            && self.tun_should_be_disabled(tun_enabled)
     }
 
     #[must_use]
@@ -170,6 +173,7 @@ mod tests {
             health,
             pending: None,
             sidecar_allowed: false,
+            prefer_sidecar: false,
             mode: RunningMode::NotRunning,
             is_admin,
             op_in_flight,

@@ -197,6 +197,10 @@ fn determine_update_flags(patch: &IVerge) -> UpdateFlags {
         update_flags.insert(UpdateFlags::SYSTRAY_MENU);
     }
 
+    // Mode changes apply Core and proxy state only after the preference has been saved.
+    if patch.enable_service_mode.is_some() {
+        update_flags.remove(UpdateFlags::RESTART_CORE | UpdateFlags::CLASH_CONFIG | UpdateFlags::SYS_PROXY);
+    }
     update_flags
 }
 
@@ -276,12 +280,24 @@ async fn process_terminated_flags(update_flags: UpdateFlags, patch: &IVerge) -> 
     Ok(())
 }
 
-/// Apply a patch, then reconcile TUN when its setting changes.
+/// Apply a patch, restart for a mode preference change, then reconcile TUN.
 ///
 /// TUN patches do not always produce a Run State transition, so reconciliation is explicit.
 pub async fn patch_verge(patch: &IVerge, not_save_file: bool) -> Result<()> {
-    apply_verge_patch(patch, not_save_file).await?;
-    if patch.enable_tun_mode.is_some() {
+    if patch.enable_service_mode.is_some() {
+        let config_write = Config::lock_config_write().await;
+        let mut patch = patch.clone();
+        if patch.enable_service_mode == Some(false) && !crate::core::runstate::RUN_STATE.state().is_admin {
+            patch.enable_tun_mode = Some(false);
+        }
+        // Save the choice before restarting: a failed Service must not trap the user in that mode.
+        apply_verge_patch_locked(&config_write, &patch, not_save_file).await?;
+        Config::generate().await?;
+        CoreManager::global().restart_core().await?;
+    } else {
+        apply_verge_patch(patch, not_save_file).await?;
+    }
+    if patch.enable_tun_mode.is_some() || patch.enable_service_mode.is_some() {
         super::reconcile_tun_availability().await;
     }
     Ok(())
@@ -310,6 +326,14 @@ pub(super) async fn apply_verge_patch_locked(
     // A failed patch rolls back to what the user already had; it never invents a value for them.
     process_terminated_flags(update_flags, patch).await?;
     transaction.commit();
+    if let Some(enable_service_mode) = patch.enable_service_mode {
+        let state = &crate::core::runstate::RUN_STATE;
+        state.set_prefer_sidecar(!enable_service_mode);
+        if enable_service_mode {
+            state.withdraw_sidecar_allowance();
+        }
+        tray::Tray::global().update_menu_and_icon().await;
+    }
     announce_verge_change();
 
     logging_error!(Type::Backup, AutoBackupManager::global().refresh_settings().await);

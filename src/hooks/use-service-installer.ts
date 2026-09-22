@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 
-import { installService, restartCore } from '@/services/cmds'
+import { installService, patchVergeConfig } from '@/services/cmds'
 import { showNotice } from '@/services/notice-service'
 
 const executeWithErrorHandling = async (
@@ -29,7 +29,7 @@ export const useServiceInstaller = () => {
     )
 
     await executeWithErrorHandling(
-      () => restartCore(),
+      () => patchVergeConfig({ enable_service_mode: true }),
       'settings.statuses.clash.restarting',
       'settings.feedback.notifications.clash.restartSuccess',
     )

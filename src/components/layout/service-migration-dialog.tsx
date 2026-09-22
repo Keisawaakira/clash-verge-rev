@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { BaseDialog } from '@/components/base'
 import { runStateQueryKey } from '@/hooks/use-system-state'
+import { useVerge } from '@/hooks/use-verge'
 import { useVisibility } from '@/hooks/use-visibility'
 import {
   continueWithSidecar,
@@ -20,6 +21,7 @@ import { setCacheData, useQuery } from '@/services/query-client'
 export const ServiceMigrationDialog = () => {
   const { t } = useTranslation()
   const pageVisible = useVisibility()
+  const { verge } = useVerge()
   const [loading, setLoading] = useState(false)
   const [stateRefreshFailed, setStateRefreshFailed] = useState(false)
   const [workflowIncomplete, setWorkflowIncomplete] = useState(false)
@@ -43,7 +45,9 @@ export const ServiceMigrationDialog = () => {
         : runState?.service === 'notInstalled'
           ? 'install'
           : 'reinstall'
-  const open = loading || workflowIncomplete || needsDecision
+  const open =
+    loading ||
+    Boolean(verge?.enable_service_mode && (workflowIncomplete || needsDecision))
   const showCheckingMessage = loading || !needsDecision
 
   // One cache entry to refresh, so there is nothing left to keep coherent by hand.

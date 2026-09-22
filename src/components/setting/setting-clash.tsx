@@ -9,6 +9,7 @@ import { BaseDialog, DialogRef, Switch, TooltipIcon } from '@/components/base'
 import { useClash } from '@/hooks/use-clash'
 import { useClashLog } from '@/hooks/use-clash-log'
 import { useDisplayedMixedPort } from '@/hooks/use-displayed-mixed-port'
+import { useSystemState } from '@/hooks/use-system-state'
 import { useVerge } from '@/hooks/use-verge'
 import { invoke_uwp_tool, setDnsOverride } from '@/services/cmds'
 import { showNotice } from '@/services/notice-service'
@@ -35,7 +36,8 @@ const SettingClash = ({ onError }: Props) => {
   const { t } = useTranslation()
 
   const { clash, version, mutateClash, patchClash } = useClash()
-  const { verge, mutateVerge } = useVerge()
+  const { verge, mutateVerge, patchVerge } = useVerge()
+  const { runState } = useSystemState()
   const displayedMixedPort = useDisplayedMixedPort()
   const [, setClashLog] = useClashLog()
 
@@ -48,6 +50,7 @@ const SettingClash = ({ onError }: Props) => {
 
   const [dnsConfirmation, setDnsConfirmation] = useState<string | null>(null)
   const [dnsUpdating, setDnsUpdating] = useState(false)
+  const [modeUpdating, setModeUpdating] = useState(false)
 
   const webRef = useRef<DialogRef>(null)
   const portRef = useRef<DialogRef>(null)
@@ -91,6 +94,18 @@ const SettingClash = ({ onError }: Props) => {
     },
   )
 
+  const handleServiceModeToggle = useLockFn(async (enable: boolean) => {
+    setModeUpdating(true)
+    try {
+      await patchVerge({ enable_service_mode: enable })
+    } catch (err: any) {
+      mutateVerge()
+      onError(err)
+    } finally {
+      setModeUpdating(false)
+    }
+  })
+
   const closeDnsConfirmation = () => {
     if (!dnsUpdating) setDnsConfirmation(null)
   }
@@ -123,6 +138,21 @@ const SettingClash = ({ onError }: Props) => {
       </BaseDialog>
       <HeaderConfiguration ref={corsRef} />
       <TunnelsViewer ref={tunnelRef} />
+      <SettingItem
+        label={t('settings.sections.clash.form.fields.preferService')}
+        extra={
+          <TooltipIcon
+            title={t('settings.sections.clash.form.tooltips.preferService')}
+          />
+        }
+      >
+        <Switch
+          edge="end"
+          checked={verge?.enable_service_mode ?? false}
+          disabled={modeUpdating || runState.opInFlight}
+          onChange={(_, checked) => handleServiceModeToggle(checked)}
+        />
+      </SettingItem>
       <SettingItem
         label={t('settings.sections.clash.form.fields.allowLan')}
         extra={

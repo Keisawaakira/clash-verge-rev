@@ -100,6 +100,7 @@
       "title": "Clash 設定",
       "form": {
         "fields": {
+          "preferService": "優先使用 Service 模式",
           "allowLan": "區域網路連線",
           "dnsOverwrite": "DNS 覆寫",
           "ipv6": "IPv6",
@@ -137,6 +138,7 @@
           }
         },
         "tooltips": {
+          "preferService": "預設關閉，直接使用 Sidecar，不再提示修復 Service。選擇會儲存，修改後重新啟動核心。Sidecar 使用 TUN 需要管理員權限。",
           "networkInterface": "網路介面",
           "unifiedDelay": "開啟統一延遲時，會進行兩次延遲測試，以消除連線握手等帶來的不同類型節點的延遲差異",
           "logLevel": "僅對日誌目錄 Service 資料夾下的內核日誌檔案生效",

@@ -32,6 +32,7 @@ async fn finalize_restored_verge_config(
 ) -> Result<()> {
     // A broken restored `verge.yaml` is a restore failure, not a reason to load defaults.
     let mut restored = help::read_yaml::<IVerge>(&verge_path()?).await?;
+    restored.enable_service_mode = Some(restored.enable_service_mode.unwrap_or(false));
     restored.webdav_url = webdav_url;
     restored.webdav_username = webdav_username;
     restored.webdav_password = webdav_password;

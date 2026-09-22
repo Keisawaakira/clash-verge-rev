@@ -22,12 +22,12 @@
     },
     "serviceMigration": {
       "title": "Hizmet güncellemesi gerekli",
-      "message": "Clash Verge hizmet sürümü, bu uygulamanın gerektirdiği sürümle eşleşmiyor. Mevcut hizmeti kaldırıp gerekli sürümü yüklemek için hizmeti yeniden kurun ya da bu oturumda Sidecar ile devam edin.",
+      "message": "Clash Verge hizmet sürümü, bu uygulamanın gerektirdiği sürümle eşleşmiyor. Mevcut hizmeti kaldırıp gerekli sürümü yüklemek için hizmeti yeniden kurun ya da Sidecar'a geçip bu seçimi kaydedin.",
       "checkingMessage": "Sistem hizmetinin durumu ve geçerli çalışma modu denetleniyor. Lütfen bekleyin…",
-      "unavailableMessage": "Gerekli Clash Verge hizmeti kullanılamıyor. Hizmeti kurun veya onarın ya da bu oturumda Sidecar ile devam edin.",
+      "unavailableMessage": "Gerekli Clash Verge hizmeti kullanılamıyor. Hizmeti kurun veya onarın ya da Sidecar'a geçip bu seçimi kaydedin.",
       "reinstall": "Hizmeti yeniden kur",
       "repair": "Hizmeti onar",
-      "continueSidecar": "Sidecar ile devam et",
+      "continueSidecar": "Sidecar kullan ve hatırla",
       "success": "Clash Verge hizmeti başarıyla güncellendi",
       "errors": {
         "actionFailed": "Hizmet işlemi başarısız oldu",

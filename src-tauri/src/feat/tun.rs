@@ -13,7 +13,7 @@ use crate::{
 /// Prevents recursive runtime disable writes.
 static DISABLING_TUN: AtomicBool = AtomicBool::new(false);
 
-/// Turn TUN off when startup confirms the Service is absent, so the Core can start on Sidecar.
+/// Turn TUN off when startup selects Sidecar without sufficient privileges.
 ///
 /// Runs before the runtime config is generated.
 pub async fn reconcile_startup_tun_availability() {
@@ -27,7 +27,7 @@ pub async fn reconcile_startup_tun_availability() {
     logging!(
         info,
         Type::Setup,
-        "Service is not installed; turning TUN mode off so the Core can start on Sidecar"
+        "Turning TUN mode off so the Core can start on Sidecar without elevation"
     );
     // Write the preference only: a patch would reach update_config_checked, which with no Core to
     // reload starts one ahead of the rest of startup, and rolls the write back if that fails.

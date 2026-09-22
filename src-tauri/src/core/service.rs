@@ -2011,6 +2011,7 @@ impl ServiceManager {
     }
 
     pub async fn detect_startup_status(&self) {
+        RUN_STATE.set_prefer_sidecar(!Config::verge().await.latest_arc().enable_service_mode.unwrap_or(false));
         if cfg!(feature = "dev-sidecar") {
             RUN_STATE.accept_sidecar();
             return;

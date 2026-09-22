@@ -100,6 +100,7 @@
       "title": "Clash 设置",
       "form": {
         "fields": {
+          "preferService": "优先使用 Service 模式",
           "allowLan": "局域网连接",
           "dnsOverwrite": "DNS 覆写",
           "ipv6": "IPv6",
@@ -137,6 +138,7 @@
           }
         },
         "tooltips": {
+          "preferService": "默认关闭，直接使用 Sidecar，不再提示修复 Service。选择会保存，修改后重启内核。Sidecar 使用 TUN 需要管理员权限。",
           "networkInterface": "网络接口",
           "unifiedDelay": "开启统一延迟时，会进行两次延迟测试，以消除连接握手等带来的不同类型节点的延迟差异",
           "logLevel": "仅对日志目录 Service 文件夹下的内核日志文件生效",
