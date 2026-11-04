@@ -6,6 +6,7 @@ import { useVerge } from '@/hooks/use-verge'
 import { useAppRefreshers, useProxiesData } from '@/providers/app-data-context'
 import delayManager, { type DelaySnapshot } from '@/services/delay'
 import {
+  findCurrentGroupMember,
   isInteractableMember,
   resolveMember,
   selectGlobalChainNodes,
@@ -78,6 +79,18 @@ const resolveOccurrences = (view: ProxyViewV1, group: ProxyGroupView) =>
     member: resolveMember(view, member),
   }))
 
+// mihomo selects DIRECT in GLOBAL by default, so the selected built-in stays visible.
+const HIDDEN_GLOBAL_BUILTINS = new Set(['DIRECT', 'REJECT'])
+
+const isHiddenGlobalBuiltin = (
+  group: ProxyGroupView,
+  { member }: ResolvedMemberOccurrence,
+) =>
+  member.kind === 'node' &&
+  member.node.source.kind === 'core' &&
+  HIDDEN_GLOBAL_BUILTINS.has(member.node.source.proxyName) &&
+  member.ref.name !== group.now
+
 const memberKey = (
   group: ProxyGroupView,
   occurrence: ResolvedMemberOccurrence,
@@ -110,7 +123,6 @@ const CHAIN_DELAY_GROUP = 'chain-mode'
 const virtualGroup = (members: ProxyGroupView['members']): ProxyGroupView => ({
   name: CHAIN_DELAY_GROUP,
   type: 'Selector',
-  alive: true,
   udp: false,
   xudp: false,
   tfo: false,
@@ -207,17 +219,22 @@ export const useRenderList = (
     verge?.default_latency_timeout,
   ])
 
+  const renderGroups = useMemo(() => {
+    if (!proxyView) return []
+    if (mode === 'rule') return proxyView.groups
+    const { global } = proxyView
+    if (!global) return []
+    const current = findCurrentGroupMember(proxyView, global)?.member
+    return current?.kind === 'group' ? [global, current.group] : [global]
+  }, [mode, proxyView])
+
   // Every group this list draws, so a test settling in any of them re-sorts that group.
   const renderedGroupNames = useMemo(() => {
     if (!proxyView) return []
     if (isChainMode)
       return selectedGroup ? [selectedGroup] : [CHAIN_DELAY_GROUP]
-    return mode === 'rule' || mode === 'script'
-      ? proxyView.groups.map(({ name }) => name)
-      : proxyView.global
-        ? [proxyView.global.name]
-        : []
-  }, [isChainMode, mode, proxyView, selectedGroup])
+    return renderGroups.map(({ name }) => name)
+  }, [isChainMode, proxyView, renderGroups, selectedGroup])
   const groupDelays = useGroupsDelays(renderedGroupNames)
 
   const groupCacheRef = useRef<Map<string, GroupCache>>(new Map())
@@ -237,7 +254,7 @@ export const useRenderList = (
         selected?.name ?? CHAIN_DELAY_GROUP,
         '',
         0,
-        latencyTimeout,
+        latencyTimeout!,
       )
       if (col > 1) {
         return groupOccurrences(occurrences, col).map((memberCol) => ({
@@ -258,16 +275,10 @@ export const useRenderList = (
       }))
     }
 
-    const useRule = mode === 'rule' || mode === 'script'
-    const renderGroups = useRule
-      ? proxyView.groups
-      : proxyView.global === null
-        ? []
-        : [proxyView.global]
     const cache = groupCacheRef.current
-    let anyChanged = false
 
     const retList = renderGroups.flatMap((group) => {
+      const isFlat = group === proxyView.global
       const headState = headStates[group.name] || DEFAULT_STATE
       const cached = cache.get(group.name)
       if (
@@ -282,34 +293,35 @@ export const useRenderList = (
         return cached.items
       }
 
-      anyChanged = true
       const ret: IRenderItem[] = [
-        {
-          type: 0,
-          key: group.name,
-          group,
-          headState,
-          icon: group.icon,
-          testUrl: group.testUrl,
-        },
+        isFlat
+          ? { type: 1, key: `head-${group.name}`, group, headState }
+          : {
+              type: 0,
+              key: group.name,
+              group,
+              headState,
+              icon: group.icon!,
+              testUrl: group.testUrl!,
+            },
       ]
 
-      if (headState.open || !useRule) {
+      if (headState.open || isFlat) {
+        const resolved = resolveOccurrences(proxyView, group)
         const occurrences = filterSort(
-          resolveOccurrences(proxyView, group),
+          isFlat
+            ? resolved.filter((item) => !isHiddenGlobalBuiltin(group, item))
+            : resolved,
           group.name,
           headState.filterText,
           headState.sortType,
-          latencyTimeout,
+          latencyTimeout!,
           {
             matchCase: headState.filterMatchCase,
             matchWholeWord: headState.filterMatchWholeWord,
             useRegularExpression: headState.filterUseRegularExpression,
           },
         )
-        if (!useRule) {
-          ret.push({ type: 1, key: `head-${group.name}`, group, headState })
-        }
         if (occurrences.length === 0) {
           ret.push({ type: 3, key: `empty-${group.name}`, group, headState })
         } else if (col > 1) {
@@ -337,21 +349,23 @@ export const useRenderList = (
       }
 
       cache.set(group.name, {
-        now: group.now,
+        now: group.now!,
         members: group.members,
         headState,
         col,
-        latencyTimeout,
+        latencyTimeout: latencyTimeout!,
         delays: groupDelays.get(group.name),
         items: ret,
       })
       return ret
     })
 
-    const filtered = !useRule
-      ? retList.slice(1)
-      : retList.filter((item) => !item.group.hidden)
-    if (!anyChanged && prevListRef.current.length === filtered.length) {
+    const filtered =
+      mode === 'rule' ? retList.filter((item) => !item.group.hidden) : retList
+    if (
+      prevListRef.current.length === filtered.length &&
+      filtered.every((item, index) => item === prevListRef.current[index])
+    ) {
       return prevListRef.current
     }
     prevListRef.current = filtered
@@ -365,6 +379,7 @@ export const useRenderList = (
     latencyTimeout,
     mode,
     proxyView,
+    renderGroups,
     selectedGroup,
   ])
 
